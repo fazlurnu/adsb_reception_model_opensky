@@ -1,8 +1,10 @@
 import numpy as np
+import matplotlib.pyplot as plt
 
 class BasicJitter:
     def __init__(self):
         self.name = "Basic Jitter"
+        self.IMAGE_DIR = 'results/figures/'
 
     def tophat(self, t1, t2, Fs = 1000, start_time = 0.0, end_time = 1.0):
         Ts = 1.0/Fs                      # sampling interval
@@ -72,3 +74,36 @@ class BasicJitter:
         y = y/sum(y)
         
         return t, y
+
+    def get_freq_domain(self, y, Fs):
+        n = len(y)                       # length of the signal
+        k = np.arange(n)
+        T = n/Fs
+        frq = k/T # two sides frequency range
+        freq = frq[range(int(n/2))]           # one side frequency range
+
+        Y = np.fft.fft(y)/n              # fft computing and normalization
+        Y = Y[range(int(n/2))]
+        PSD = Y * np.conj(Y)
+
+        return freq, Y
+
+    def get_figure(self, t, y, Fs, title = ''):
+        fig, axs = plt.subplots(nrows=2, figsize=(7.5, 7.5))
+        axs[0].set_title(title)
+        plt.subplots_adjust(hspace=0.3)
+
+        axs[0].plot(t,y,'k-')
+        axs[0].set_xlabel('Time [s]')
+        axs[0].set_ylabel('Probability Density [-]')
+
+        freq, Y = self.get_freq_domain(y, Fs)
+
+        axs[1].plot(freq, abs(Y), 'r-')
+        axs[1].set_xlabel('Freq (Hz)')
+        axs[1].set_ylabel('|Y(freq)|')
+        axs[1].set_xlim([0, Fs/10])
+
+        plt.savefig(self.IMAGE_DIR + "{}.png".format(title), format = "png")
+
+        plt.show()
