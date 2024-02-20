@@ -1,2 +1,6 @@
 pos_tables/
 icao24_table/
+.DS_Store
+results/.DS_Store
+scripts/.DS_Store
+.ipynb_checkpoints
