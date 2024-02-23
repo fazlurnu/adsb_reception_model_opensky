@@ -13,6 +13,13 @@ from shapely.geometry import Point
 
 from math import *
 
+import sys
+
+# Check if at least one command-line argument is provided
+if len(sys.argv) < 2:
+    print("Usage: python filename.py <input>")
+    sys.exit(1)
+
 def haversine(lat1, lon1, lat_receiver, lon_receiver):
     R = 6371.0  # radius of the Earth in km
 
@@ -40,7 +47,10 @@ def get_cum(freq):
         
     return np.array(cum_list)
 
-sensor_id = 90714
+path_dir = sys.argv[1]
+path_parts = path_dir.split('/')
+
+sensor_id = int(path_parts[-1])
 
 print('####### get reception prob, serial id: {} #######'.format(sensor_id))
 
@@ -116,6 +126,12 @@ hull = ConvexHull(points)
 
 # Convert the convex hull points to a list of tuples
 hull_points = [tuple(points[idx]) for idx in hull.vertices]
+
+# Extract the vertices of the convex hull
+hull_vertices = points[hull.vertices]
+
+# Convert hull vertices to a list
+hull_vertices_list = hull_vertices.tolist()
 
 # Create a shapely Polygon object from the hull points
 polygon = Polygon(hull_points)
@@ -261,15 +277,16 @@ data = {
     'nb_airport_med_lar_scheduled': [nb_airport_med_lar_scheduled]
 }
 
-print('####### binning dataframe, calculate nbdata #######')
-
 # Create DataFrame
 params_df = pd.DataFrame(data)
+
+print('####### binning dataframe, calculate nbdata #######')
 
 df_all_bin = []
 df_all_bin_size = []
 
 df_avg_range = []
+df_avg_traf = []
 
 traf_bin_width = 10
 range_bin_width = 10
@@ -285,6 +302,7 @@ for i in range(nb_of_cat_range):
     df_range_all_size = []
     
     df_avg_range_ = []
+    df_avg_traf_ = []
     
     for j in range(nb_of_cat_traf):
         traf_crit = ((df['nb_of_traffic'] > j*traf_bin_width) & (df['nb_of_traffic'] <= (j+1)*traf_bin_width))
@@ -295,22 +313,29 @@ for i in range(nb_of_cat_range):
         df_range_all.append(df[all_crit])
         df_range_all_size.append(len(df[all_crit]))
         
-        df_avg_range_.append(df.loc[traf_crit]['range_NM'].mean())
+        avg_traf = df.loc[traf_crit & range_crit]['nb_of_traffic'].mean()
+        avg_range = df.loc[traf_crit & range_crit]['range_NM'].mean()
+        
+        df_avg_range_.append(avg_range)
+        df_avg_traf_.append(avg_traf)
         
     df_all_bin.append(df_range_all)
     df_all_bin_size.append(df_range_all_size)
     
     df_avg_range.append(df_avg_range_)
+    df_avg_traf.append(df_avg_traf_)
 
 range_arr = np.arange(range_bin_width, max_range, range_bin_width)
 traf_arr = np.arange(traf_bin_width, max_traf, traf_bin_width)
 data_size = np.array(df_all_bin_size).T
 df_avg_range = np.array(df_avg_range).T
+df_avg_traf = np.array(df_avg_traf).T
 
 range_arr_col = np.append(range_arr, [max_range])
 
 df_nb_of_data = pd.DataFrame(data_size[:], columns = range_arr_col)
 df_avg_range = pd.DataFrame(df_avg_range[:], columns = range_arr_col)
+df_avg_traf = pd.DataFrame(df_avg_traf[:], columns = range_arr_col)
 
 df_nb_of_data
 
@@ -364,7 +389,14 @@ df_prob_second_bump = pd.DataFrame(second_bump[:], columns = range_arr_col)
 df_prob_first_bump.to_csv('{}/probability_first_bump.csv'.format(path))
 df_prob_second_bump.to_csv('{}/probability_second_bump.csv'.format(path))
 df_nb_of_data.to_csv('{}/nb_data.csv'.format(path))
+
 df_avg_range.to_csv('{}/avg_range.csv'.format(path))
+df_avg_traf.to_csv('{}/avg_traf.csv'.format(path))
 
 params_df.to_csv('{}/params.csv'.format(path))
 
+import json
+
+# Save hull vertices as a JSON file
+with open('{}/convex_hull.json'.format(path), 'w') as f:
+    json.dump(hull_vertices_list, f)
