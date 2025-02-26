@@ -1,3 +1,5 @@
+# %%
+
 import pandas as pd
 import numpy as np
 from sklearn.metrics import mean_squared_error
@@ -87,6 +89,7 @@ df_sensor = pd.read_csv('../sensors/sensor_loc.csv')
 
 # Step 2: Loop through each file, load, assign CR, and add to the list
 for i, file in enumerate(csv_files):
+    print(f'Processing {i+1}/{len(csv_files)} files')
     sensor_id = file.split('/')[-1].split('_')[1].split('.')[0]
     
     df = pd.read_csv(file)
@@ -101,11 +104,78 @@ for i, file in enumerate(csv_files):
     sensor_lon = df_sensor[df_sensor['serial'] == int(sensor_id)]['lon'].iloc[0]
     
     df['airport'] = get_nb_airport(sensor_id, df_airport, sensor_lon, sensor_lat)
-    df['sensor_id'] = sensor_id
+    df['sensor_id'] = int(sensor_id)
+    df['type'] = df_sensor[df_sensor['serial'] == int(sensor_id)]['type'].iloc[0]
+    
     # Append to the list
     df_list.append(df)
 
 # Step 3: Concatenate all DataFrames into a single DataFrame
 aggregated_df = pd.concat(df_list, ignore_index=True)
 
-print(aggregated_df)
+# %% 
+# Step 1: Split data by sensor_id
+sensor_to_test = aggregated_df['sensor_id'].unique()[4]  # Choose one sensor_id for testing
+train_df = aggregated_df[(aggregated_df['sensor_id'] != sensor_to_test) & (aggregated_df['type'] == 'dump1090')]
+test_df = aggregated_df[aggregated_df['sensor_id'] == sensor_to_test]
+
+# Step 2: Define features and target
+features = ['distance_avg', 'CR', 'traffic_avg', 'airport']  # Add relevant features
+target = '2500_reception_probability'
+
+X_train = train_df[features].values
+y_train = train_df[target].values
+
+X_test = test_df[features].values
+y_test = test_df[target].values
+
+# Step 3: Define model function
+def reception_model_variable_a(X, a1_t, a1_a, a1_intercept, 
+                               a2_t, a2_a, a2_intercept, 
+                               a3_t, a3_a, a3_intercept, 
+                               a4_t, a4_a, a4_intercept):
+    d, CR, traffic_avg, airport = X.T  # Unpack the columns
+    a1 = a1_t * traffic_avg + a1_a * airport + a1_intercept
+    a2 = a2_t * traffic_avg + a2_a * airport + a2_intercept
+    a3 = a3_t * traffic_avg + a3_a * airport + a3_intercept
+    a4 = a4_t * traffic_avg + a4_a * airport + a4_intercept
+    ratio = d / CR
+    return np.exp(-3 * ratio**2) * (1 + a1 * ratio + a2 * ratio**2 + a3 * ratio**3 + a4 * ratio**4)
+
+# Step 4: Perform multiple iterations of curve fitting with random initial guesses
+iterations = 100
+best_rmse = np.inf
+best_popt = None
+
+for i in range(iterations):
+    # Generate random initial guess for parameters
+    initial_guess = np.random.uniform(-1, 1, size=12)  # Adjust as needed
+
+    try:
+        # Perform curve fitting on the training data
+        popt, _ = curve_fit(reception_model_variable_a, X_train, y_train, p0=initial_guess)
+
+        # Use the fitted parameters to predict on the training data
+        reception_pred_train = reception_model_variable_a(X_train, *popt)
+
+        # Calculate RMSE for the training data
+        rmse_train = np.sqrt(mean_squared_error(y_train, reception_pred_train))
+
+        # If this fit is better, save the parameters and RMSE
+        if rmse_train < best_rmse:
+            best_rmse = rmse_train
+            best_popt = popt
+
+    except RuntimeError as e:
+        print(f"Iteration {i+1} failed: {e}")
+
+# Step 5: Evaluate on the test data
+reception_pred_test = reception_model_variable_a(X_test, *best_popt)
+
+# Calculate RMSE for the test data
+rmse_test = np.sqrt(mean_squared_error(y_test, reception_pred_test))
+
+# Print results
+print(f"Best RMSE on training data: {best_rmse}")
+print(f"RMSE on test data (sensor {sensor_to_test}): {rmse_test}")
+print(f"Best fitted parameters: {best_popt}")
