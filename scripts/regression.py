@@ -39,7 +39,7 @@ def get_nb_airport(sensor_id, df_airport, sensor_lon=2, sensor_lat=50):
     return sum(hull_polygon.contains(Point(lat, lon)) for lat, lon in df_airport[['latitude_deg', 'longitude_deg']].values)
 
 # Load airport data
-df_airport = pd.read_csv('airports.csv')
+df_airport = pd.read_csv('../airports/airports.csv')
 df_airport = df_airport[(df_airport['name'] != 'SPAM') & (df_airport['scheduled_service'] == 'yes') & (df_airport['type'].isin(['medium_airport', 'large_airport']))]
 
 # Load sensor data
