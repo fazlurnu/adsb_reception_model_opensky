@@ -84,13 +84,13 @@ max_radius_NM = 300
 
 # Set how many hours required to check the circularity
 minute_interval = 15
-hours_required = 2
+hours_required = 1
 df_per_hours = 60/minute_interval
 df_required = df_per_hours * hours_required
 
 # Define start and end dates for iteration
-start_date = datetime(2022, 6, 1, 6, 0, 0)
-end_date = datetime(2022, 6, 4, 6, 0, 0)  # June 1, 2022, is the last day
+start_date = datetime(2022, 6, 1, 9, 0, 0)
+end_date = datetime(2022, 6, 1, 10, 0, 0)  # June 1, 2022, is the last day
 
 # Iterate over each sensor in the sensor_ids list
 circular_coverage_sensor = {}
@@ -133,9 +133,9 @@ for sensor_id in sensor_ids:
 
         print(f"Fetching data for: {begin_time}")
 
-        # Inner loop: Loop every 15 minutes within the day (from 00:00:00 to 23:45:00)
+        # Inner loop: Loop every minute_interval minutes within the day
         time_of_day = current_date
-        while time_of_day < current_date + timedelta(hours=6):
+        while time_of_day < current_date + timedelta(hours=hours_required):
             print(f"{receiver_counter}/{len(sensor_ids)}. Current time: {time_of_day.strftime('%H:%M:%S')}")
 
             # Set the start and stop times for each 1-minute interval
@@ -186,8 +186,8 @@ for sensor_id in sensor_ids:
                 dataframe_empty = True
                 break
 
-            # Increment time_of_day by 15 minutes
-            time_of_day += timedelta(minutes=15)
+            # Increment time_of_day by minute_interval minutes
+            time_of_day += timedelta(minutes=minute_interval)
 
             # Check circularity after sufficient data points
             if (len(all_data) > df_required and not(circularity_checked)):
@@ -233,15 +233,15 @@ for sensor_id in sensor_ids:
 
                 ratio_max_min_edge = max_dist_edge/min_dist_edge
                 
-                is_circular = 0.9<circularity<1.1
+                is_circular = circularity > 0.8
                 is_center = ratio_max_min < 1.25
                 is_center_edge = ratio_max_min_edge < 1.25
-                
-                print(f"Circularity: {circularity:.2f} for sensor_id: {sensor_id}")
 
-                # If circularity is less than 0.9, move to the next sensor_id
-                if (circularity < 0.9) or (circularity > 1.1):
-                    print(f"Circularity is less than 0.9 or bigger than 1.1 for sensor_id {sensor_id}.\nSkipping to the next sensor.")
+                print(f"{circularity:.2f}, {ratio_max_min:.2f}, {ratio_max_min_edge:.2f}")
+                print(is_circular, is_center, is_center_edge)
+
+                if(is_circular and is_center and is_center_edge):
+                    print(f"Sensor ID {sensor_id} is not circular.\nSkipping to the next sensor.")
                     circularity_broken = True
                     circular_coverage_sensor[sensor_id] = circularity
                     break
