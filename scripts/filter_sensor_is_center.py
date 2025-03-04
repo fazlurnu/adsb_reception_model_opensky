@@ -131,19 +131,18 @@ for filename in os.listdir(scripts_path):
         is_circular = circularity > 0.8
         is_center = max_min_ratio < 1.25
         is_center_edge = max_min_ratio_edge < 1.25
-        is_wide_coverage = max_dist_hull > 175
 
         print(f"{circularity:.2f}, {max_min_ratio:.2f}, {max_min_ratio_edge:.2f}")
         print(is_circular, is_center, is_center_edge)
 
         if(is_circular and is_center and is_center_edge):
-            target_folder = 'sensor_is_center_and_circular'
+            target_folder = '../sensor_circularity_quick_test/sensor_is_center_and_circular'
 
             if not os.path.exists(target_folder):
                 os.makedirs(target_folder)
 
         else:
-            target_folder = 'sensor_not_center_and_circular_again'
+            target_folder = '../sensor_circularity_quick_test/sensor_not_center_and_circular_again'
             if not os.path.exists(target_folder):
                 os.makedirs(target_folder)
 
