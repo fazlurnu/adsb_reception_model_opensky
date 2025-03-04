@@ -69,17 +69,17 @@ NM_per_degree = 60
 max_radius_NM = 300
 
 # Set how many hours required to check the circularity
-minute_interval = 6
-hours_required = 2
+minute_interval = 15
+hours_required = 0.5
 df_per_hours = 60/minute_interval
 df_required = df_per_hours * hours_required
 
 # Define start and end dates for iteration
-begin_hour = 12
-duration = 6
+begin_hour = 0
+duration = 2
 
-start_date = datetime(2022, 9, 20, begin_hour, 0, 0)
-end_date = datetime(2022, 9, 24, begin_hour, 0, 0)
+start_date = datetime(2022, 1, 1, begin_hour, 0, 0)
+end_date = datetime(2022, 1, 31, begin_hour, 0, 0)
 
 # Iterate over each sensor in the sensor_ids list
 circular_coverage_sensor = {}
@@ -166,15 +166,13 @@ for sensor_id in sensor_ids:
                     # Append the DataFrame to the list for the day
                     all_data.append(df)
 
-                    print(len(df['icao24'].unique()))
-
                 # Increment time_of_day by 15 minutes
                 time_of_day += timedelta(minutes=minute_interval)
             except:
                 print("Error here")
 
         # Concatenate all data for the day into a single DataFrame
-        target_folder = str(sensor_id)
+        target_folder = "../sensor_pos_data/" + str(sensor_id)
 
         if not os.path.exists(target_folder):
                 os.makedirs(target_folder)
