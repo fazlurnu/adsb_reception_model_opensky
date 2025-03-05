@@ -55,7 +55,7 @@ trino = Trino()
 # Load sensor location data
 df_sensor_loc = pd.read_csv('../sensors/sensor_loc.csv')
 
-directory_path = "sensor_is_center_and_circular"  # Change this to your actual directory
+directory_path = "../sensor_circularity_quick_test/sensor_is_center_and_circular"  # Change this to your actual directory
 df_sensor_interest = get_circular_sensor(directory_path)
 
 df_sensor_loc = df_sensor_loc[df_sensor_loc['serial'].isin(df_sensor_interest)]
@@ -79,7 +79,7 @@ begin_hour = 0
 duration = 2
 
 start_date = datetime(2022, 1, 1, begin_hour, 0, 0)
-end_date = datetime(2022, 1, 31, begin_hour, 0, 0)
+end_date = datetime(2022, 12, 31, begin_hour, 0, 0)
 
 # Iterate over each sensor in the sensor_ids list
 circular_coverage_sensor = {}

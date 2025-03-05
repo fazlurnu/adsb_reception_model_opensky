@@ -70,7 +70,7 @@ def haversine_projected_distance(sensor, p1, p2):
 trino = Trino()
 
 # Load sensor location data
-df_sensor_loc = pd.read_csv('../sensors/sensor_loc.csv')
+df_sensor_loc = pd.read_csv('../sensors/sensor_loc_circular.csv')
 df_sensor_loc['in_europe'] = df_sensor_loc.apply(lambda row: is_in_europe(row['lat'], row['lon']), axis=1)
 
 # Get the list of sensor IDs (with the first ID being -1408237098)
@@ -84,13 +84,13 @@ max_radius_NM = 300
 
 # Set how many hours required to check the circularity
 minute_interval = 15
-hours_required = 1
+hours_required = 6
 df_per_hours = 60/minute_interval
 df_required = df_per_hours * hours_required
 
 # Define start and end dates for iteration
 start_date = datetime(2022, 6, 1, 9, 0, 0)
-end_date = datetime(2022, 6, 1, 10, 0, 0)  # June 1, 2022, is the last day
+end_date = datetime(2022, 6, 3, 10, 0, 0)
 
 # Iterate over each sensor in the sensor_ids list
 circular_coverage_sensor = {}
@@ -190,7 +190,7 @@ for sensor_id in sensor_ids:
             time_of_day += timedelta(minutes=minute_interval)
 
             # Check circularity after sufficient data points
-            if (len(all_data) > df_required and not(circularity_checked)):
+            if (len(all_data) >= df_required and not(circularity_checked)):
                 circularity_checked = True
                 for_convex_hull = pd.concat(all_data, ignore_index=True)
                 
@@ -201,7 +201,7 @@ for sensor_id in sensor_ids:
                 hull = ConvexHull(points)
 
                 hull_area = hull.volume  # Convex hull area
-                hull_perimeter = np.sum(np.sqrt(np.sum(np.diff(points[hull.vertices, :], axis=0)**2, axis=1)))  # Convex hull perimeter
+                hull_perimeter = hull.area
 
                 # Calculate the circularity
                 circularity = calculate_circularity(hull_area, hull_perimeter)
@@ -239,14 +239,23 @@ for sensor_id in sensor_ids:
 
                 print(f"{circularity:.2f}, {ratio_max_min:.2f}, {ratio_max_min_edge:.2f}")
                 print(is_circular, is_center, is_center_edge)
+                
+                is_circularity_ok = is_circular and is_center and is_center_edge
+                circular_coverage_sensor[sensor_id] = is_circularity_ok
+                
+                if(is_circularity_ok):
+                    target_folder = '../sensor_circularity_quick_test/sensor_is_center_and_circular'
 
-                if(is_circular and is_center and is_center_edge):
-                    print(f"Sensor ID {sensor_id} is not circular.\nSkipping to the next sensor.")
-                    circularity_broken = True
-                    circular_coverage_sensor[sensor_id] = circularity
-                    break
+                    if not os.path.exists(target_folder):
+                        os.makedirs(target_folder)
                 else:
-                    circular_coverage_sensor[sensor_id] = circularity
+                    print(f"Sensor ID {sensor_id} is not circular.\nSkipping to the next sensor.")
+                    target_folder = '../sensor_circularity_quick_test/sensor_not_center_and_circular_again'
+
+                    if not os.path.exists(target_folder):
+                        os.makedirs(target_folder)
+                    circularity_broken = True
+                    break
 
         # Concatenate all data for the day into a single DataFrame
         if all_data:
@@ -254,7 +263,7 @@ for sensor_id in sensor_ids:
 
             # Save the DataFrame for the day into a CSV file
             if (not final_df.empty) and (not circularity_broken):
-                final_df.to_csv(f'{sensor_id}_{begin_time}_data.csv', index=False)
+                final_df.to_csv(f'{target_folder}/{sensor_id}_{begin_time}_data.csv', index=False)
 
                 # Print save status
                 print(f"Data for {begin_time} saved to {sensor_id}_{begin_time}_data.csv")
