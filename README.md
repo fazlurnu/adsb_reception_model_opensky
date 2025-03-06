@@ -18,7 +18,7 @@ For further details, refer to the full paper (soon published) available on Journ
 - model: contain the constants for the model
 
 ## How-to
-To generate the results, first you need to download lots of OpenSky data. The first thing to do is to run `get_pos_data_quick_filter.py`, this code downloads data and only save those that are considered "circular" within the time frame of the download. Next, you can run `get_pos_data_final_filtered.py`, this will download the data for an entire year of 2022. You can set the begin and end time to have less or more data. After that, you can run `make_reception_prob.py` to calculate the reception probability of each receiver. Lastly, you can run `regression` to produce the model.
+To generate the results, first you need to download lots of OpenSky data. The first thing to do is to run `get_pos_data_quick_filter.py`, this code downloads data and only save those that are considered "circular" within the time frame of the download. Next, you can run `get_pos_data_final_filtered.py`, this will download the data for an entire year of 2022. You can set the begin and end time to have less or more data. After that, you can run `make_reception_prob.py` to calculate the reception probability of each receiver. Lastly, you can run `regression.py` to produce the model.
 
 The regression model that I have is not the most ideal, please consider improving it.
 
