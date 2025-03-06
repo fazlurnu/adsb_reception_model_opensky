@@ -6,7 +6,7 @@ This repository includes processed dataset, scripts, and results from the model 
 
 Feel free to contribute!
 
-For further details, refer to the full paper and dataset available on OpenSky Network (soon published).
+For further details, refer to the full paper (soon published) available on Journal of Open Aviation Science (JOAS).
 
 ## Repository Content
 - scripts: contain scripts to download data from OpenSky's database
