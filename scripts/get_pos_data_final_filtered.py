@@ -76,7 +76,7 @@ df_required = df_per_hours * hours_required
 
 # Define start and end dates for iteration
 begin_hour = 0
-duration = 2
+duration = 12
 
 start_date = datetime(2022, 1, 1, begin_hour, 0, 0)
 end_date = datetime(2022, 12, 31, begin_hour, 0, 0)
