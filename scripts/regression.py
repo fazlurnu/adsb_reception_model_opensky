@@ -74,6 +74,8 @@ if 'aggregated_df' not in globals():
 # Initialize results dataframe
 results = []
 
+error_per_distance = {'distance': [], 'error': []}
+
 # Function to fit and evaluate reception model
 def fit_and_evaluate_model(sensor_type):
     for sensor_to_test in aggregated_df[aggregated_df['type'] == sensor_type]['sensor_id'].unique():
@@ -112,13 +114,19 @@ def fit_and_evaluate_model(sensor_type):
                 continue
 
         y_pred_test = reception_model(X_test, *best_popt)
+        errors = abs(y_pred_test - y_test)
+
+        for d, e in zip(X_test[:, 0], errors):
+            error_per_distance['distance'].append(d)
+            error_per_distance['error'].append(e)  # Initialize as list
+
         rmse_test = np.sqrt(mean_squared_error(y_test, y_pred_test))
 
         results.append({
             "Sensor Type": sensor_type,
             "Sensor ID": sensor_to_test,
-            "Best RMSE (Train)": best_rmse,
-            "RMSE (Test)": rmse_test,
+            "Best RMSE (Train) %": best_rmse * 100,
+            "RMSE (Test) %": rmse_test * 100,
             "Best Parameters": best_popt
         })
 
@@ -126,8 +134,12 @@ def fit_and_evaluate_model(sensor_type):
 fit_and_evaluate_model('Radarcape')
 fit_and_evaluate_model('dump1090')
 
+error_per_distance = pd.DataFrame(error_per_distance)
+error_per_distance.to_csv('../model/error_per_distance.csv', index=False)
+
 # Convert results to DataFrame and display
 results_df = pd.DataFrame(results)
 print(results_df)
 
 results_df.to_csv('../model/regression_models.csv', index=False)
+# %%

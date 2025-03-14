@@ -44,5 +44,5 @@ for file in os.listdir('../sensors_reception_prob/nb_data_sensors/'):
         plt.ylabel("Distance Bin [NM]", fontsize = 16)
         plt.title(f"Number of Data for Traffic vs Distance Pair. Sensor ID: {sensor_name}", fontsize = 16)
 
-        plt.savefig(f'../sensors_reception_prob/nb_data_sensors/{sensor_name}.png', dpi = 300, bbox_inches = "tight")
+        plt.savefig(f'../figures/nb_data_{sensor_name}.png', dpi = 300, bbox_inches = "tight")
         plt.close()
