@@ -34,13 +34,15 @@ for file in os.listdir('../sensors_reception_prob/nb_data_sensors/'):
         
         # Plot the corrected sorted heatmap
         plt.figure(figsize=(12, 8))
-        sns.heatmap(df_pivot_sorted, cmap="Blues", cbar=True, vmax = 10000)
+        ax = sns.heatmap(df_pivot_sorted, cmap="Blues", cbar=True, vmax = 10000, cbar_kws={'label' : 'Number of Data'})
+        cbar = ax.collections[0].colorbar
+        cbar.ax.yaxis.label.set_size(16)  # Change color bar label font size
 
         # Rotate x-axis labels for better readability
         plt.xticks(rotation=90)
         plt.xlabel("Traffic Bin [-]", fontsize = 16)
         plt.ylabel("Distance Bin [NM]", fontsize = 16)
-        plt.title(f"Number of Data for Traffic vs Distance Pair. Sensor ID: {sensor_name}")
+        plt.title(f"Number of Data for Traffic vs Distance Pair. Sensor ID: {sensor_name}", fontsize = 16)
 
         plt.savefig(f'../sensors_reception_prob/nb_data_sensors/{sensor_name}.png', dpi = 300, bbox_inches = "tight")
         plt.close()
