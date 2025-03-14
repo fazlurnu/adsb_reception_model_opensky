@@ -13,11 +13,10 @@ model_new = df_model_rmse['RMSE (Test) %']
 chung_rmse = df_chung_rmse['rmse']
 
 # Create a boxplot for the given data
-plt.figure(figsize=(8, 6))
+plt.figure(figsize=(8, 8))
 plt.boxplot([df_model_rmse['RMSE (Test) %'], df_chung_rmse['rmse']], labels=['Adapted Model', 'Existing Model'])
 
 # Set title and labels
-plt.title('Comparison of RMSE Values', fontsize = 14)
 plt.ylabel('RMSE [%]', fontsize = 14)
 plt.xticks(fontsize = 14)
 plt.yticks(fontsize = 14)
@@ -45,7 +44,7 @@ fig, ax1 = plt.subplots(figsize=(12, 6))
 
 # Boxplot on primary y-axis
 ax1.boxplot(grouped_errors, labels=labels, showfliers=False)
-ax1.set_xlabel("Distance Range [NM]", fontsize=14)
+ax1.set_xlabel("Distance Interval [NM]", fontsize=14)
 ax1.set_ylabel("Reception Probability Absolute Error [%]", fontsize=14, color='black')
 ax1.set_title("Reception Probability Absolute Error Distribution by Distance Range with Data Count", fontsize=16)
 ax1.tick_params(axis='y', labelcolor='black')
@@ -62,3 +61,30 @@ os.makedirs(output_dir, exist_ok=True)
 
 plt.savefig(os.path.join(output_dir, 'absolute_error_each_distance.png'), dpi=300, bbox_inches='tight')
 # %%
+# Create a bar plot for RMSE (Test) %
+regression_df = pd.read_csv('../model/regression_models.csv')
+
+# Sort the dataframe so that 'Radarcape' sensors are on the left
+regression_df_sorted = regression_df.sort_values(by=["Sensor Type", "RMSE (Test) %"], ascending=[True, False])
+
+# Assign colors: Radarcape (lighter gray), Dump1090 (darker gray)
+colors = ['lightgray' if sensor_type == 'Radarcape' else 'gray' for sensor_type in regression_df_sorted["Sensor Type"]]
+
+# Create figure and bar plot
+fig, ax = plt.subplots(figsize=(12, 6))
+bars = ax.bar(regression_df_sorted["Sensor ID"].astype(str), regression_df_sorted["RMSE (Test) %"], color=colors)
+
+# Customize plot
+ax.set_xlabel("Sensor ID", fontsize=14)
+ax.set_ylabel("RMSE (Test) %", fontsize=14)
+ax.set_title("Cross Validation RMSE (Test) % for Each Sensor", fontsize=16)
+ax.set_xticklabels(regression_df_sorted["Sensor ID"].astype(str), rotation=90, fontsize=12)
+ax.tick_params(axis='y', labelsize=12)
+
+# Create legend
+legend_labels = {'lightgray': 'Radarcape', 'gray': 'Dump1090'}
+handles = [plt.Rectangle((0, 0), 1, 1, color=color) for color in legend_labels.keys()]
+ax.legend(handles, legend_labels.values(), title="Sensor Type", fontsize=12, title_fontsize=14)
+
+# Show plot
+plt.show()
