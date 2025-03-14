@@ -76,8 +76,8 @@ bars = ax.bar(regression_df_sorted["Sensor ID"].astype(str), regression_df_sorte
 
 # Customize plot
 ax.set_xlabel("Sensor ID", fontsize=14)
-ax.set_ylabel("RMSE (Test) %", fontsize=14)
-ax.set_title("Cross Validation RMSE (Test) % for Each Sensor", fontsize=16)
+ax.set_ylabel("RMSE [%]", fontsize=14)
+ax.set_title("Cross Validation RMSE [%] for Each Sensor", fontsize=16)
 ax.set_xticklabels(regression_df_sorted["Sensor ID"].astype(str), rotation=90, fontsize=12)
 ax.tick_params(axis='y', labelsize=12)
 
@@ -87,4 +87,43 @@ handles = [plt.Rectangle((0, 0), 1, 1, color=color) for color in legend_labels.k
 ax.legend(handles, legend_labels.values(), title="Sensor Type", fontsize=12, title_fontsize=14)
 
 # Show plot
-plt.show()
+plt.savefig(os.path.join(output_dir, 'cross_validation_rmse.png'), dpi=300, bbox_inches='tight')
+
+# %%
+
+sensor_data_path = '../sensors_reception_prob/processed_sensor_probability.csv'
+sensor_df = pd.read_csv(sensor_data_path)
+
+# Extract unique CR and airport values for each sensor
+unique_sensor_data = sensor_df.groupby("sensor_id")[["CR", "airport", "type"]].first().reset_index()
+
+# Assign colors based on sensor type
+color_map = {'Radarcape': 'lightgray', 'dump1090': 'gray'}
+colors = [color_map[sensor_type] for sensor_type in unique_sensor_data["type"]]
+
+# Create scatter plot
+plt.figure(figsize=(6, 6))
+plt.scatter(unique_sensor_data["CR"], unique_sensor_data["airport"], c=colors, edgecolors="black", s=100, marker="o")
+
+# Identify the points corresponding to the specified sensor IDs
+highlight_sensors = [-1408235680, -1408235424]
+highlight_points = unique_sensor_data[unique_sensor_data["sensor_id"].isin(highlight_sensors)]
+
+# Highlight the specified sensors
+plt.scatter(highlight_points["CR"], highlight_points["airport"], c="red", edgecolors="black", s=150, marker="o")
+
+# Annotate points
+for _, row in highlight_points.iterrows():
+    plt.annotate(str(row["sensor_id"]), (row["CR"], row["airport"]), textcoords="offset points", xytext=(5,5), fontsize=12, color="red")
+
+# Customize plot
+plt.xlabel("Maximum Distance [NM]", fontsize=14)
+plt.ylabel("Number of Airport [-]", fontsize=14)
+plt.title("Sensor's Geographical Features", fontsize=16)
+
+# Add legend without the highlighted sensors
+handles = [plt.Line2D([0], [0], marker='o', color=color, markersize=10, linestyle='', markeredgecolor="black") for color in color_map.values()]
+plt.legend(handles, color_map.keys(), title="Sensor Type", fontsize=12, title_fontsize=14)
+
+# Show the plot
+plt.savefig(os.path.join(output_dir, 'sensor_geo_features.png'), dpi=300, bbox_inches='tight')
