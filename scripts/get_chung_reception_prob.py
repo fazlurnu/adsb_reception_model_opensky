@@ -179,19 +179,24 @@ aggregated_df['prob_chung'] = aggregated_df.apply(lambda row: final_prob_chung(r
 aggregated_df.to_csv('../sensors_reception_prob/chungs_reception_probability.csv', index = False)
 print('File is saved to: ../sensors_reception_prob/chungs_reception_probability.csv')
 
-if args.plot:
-    for i, file in enumerate(csv_files):
-        sensor_to_test = file.split('/')[-1].split('_')[1].split('.')[0]
-    
-        test_df = aggregated_df[aggregated_df['sensor_id'] == sensor_to_test]
+rmse_dict = {'sensor': [], 'rmse': []}
 
-        # Extract the two columns for RMSE calculation
-        true_values = test_df['2500_reception_probability'].values
-        estimated_values = test_df['prob_chung'].values
+for i, file in enumerate(csv_files):
+    sensor_to_test = file.split('/')[-1].split('_')[1].split('.')[0]
 
-        # Compute RMSE
-        rmse = np.sqrt(mean_squared_error(true_values, estimated_values)) * 100
+    test_df = aggregated_df[aggregated_df['sensor_id'] == sensor_to_test]
 
+    # Extract the two columns for RMSE calculation
+    true_values = test_df['2500_reception_probability'].values
+    estimated_values = test_df['prob_chung'].values
+
+    # Compute RMSE
+    rmse = np.sqrt(mean_squared_error(true_values, estimated_values)) * 100
+
+    rmse_dict['sensor'].append(sensor_to_test)
+    rmse_dict['rmse'].append(rmse)
+
+    if args.plot:
         plt.figure(figsize=(8, 8))
         plt.scatter(test_df['2500_reception_probability'], test_df['prob_chung'])
 
@@ -208,3 +213,6 @@ if args.plot:
 
         plt.legend()
         plt.show()
+
+df_rmse = pd.DataFrame(rmse_dict)
+df_rmse.to_csv('../model/rmse_chung.csv', index = False)
