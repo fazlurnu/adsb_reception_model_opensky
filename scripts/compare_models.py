@@ -51,8 +51,8 @@ fig, ax1 = plt.subplots(figsize=(12, 6))
 # Boxplot on primary y-axis
 ax1.boxplot(grouped_errors, labels=labels, showfliers=False)
 ax1.set_xlabel("Distance Interval [NM]", fontsize=14)
-ax1.set_ylabel("Reception Probability Absolute Error [%]", fontsize=14, color='black')
-ax1.set_title("Reception Probability Absolute Error Distribution by Distance Range with Data Count", fontsize=16)
+ax1.set_ylabel("Reception Probability Error [%]", fontsize=14, color='black')
+ax1.set_title("Reception Probability Error Distribution by Distance Range with Data Count", fontsize=16)
 ax1.tick_params(axis='y', labelcolor='black')
 ax1.set_xticklabels(labels, rotation=45, fontsize=12)
 
@@ -65,7 +65,7 @@ ax2.tick_params(axis='y', labelcolor='gray')
 output_dir = "../figures"
 os.makedirs(output_dir, exist_ok=True)
 
-plt.savefig(os.path.join(output_dir, 'absolute_error_each_distance.png'), dpi=300, bbox_inches='tight')
+plt.savefig(os.path.join(output_dir, 'error_each_distance.png'), dpi=300, bbox_inches='tight')
 # %%
 # Create a bar plot for RMSE (Test) %
 regression_df = pd.read_csv('../model/regression_models.csv')

@@ -114,7 +114,7 @@ def fit_and_evaluate_model(sensor_type):
                 continue
 
         y_pred_test = reception_model(X_test, *best_popt)
-        errors = abs(y_pred_test - y_test)
+        errors = (y_pred_test - y_test)
 
         for d, e in zip(X_test[:, 0], errors):
             error_per_distance['distance'].append(d)
