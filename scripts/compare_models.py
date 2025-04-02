@@ -4,13 +4,16 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import os
 import numpy as np
-
+import re
 # %%
 df_chung_rmse = pd.read_csv('../model/rmse_chung.csv')
 df_model_rmse = pd.read_csv('../model/regression_models.csv')
 
 model_new = df_model_rmse['RMSE (Test) %']
 chung_rmse = df_chung_rmse['rmse']
+
+print(df_model_rmse['RMSE (Test) %'].mean(), df_chung_rmse['rmse'].mean())
+print(len(df_model_rmse))
 
 # Create a boxplot for the given data
 plt.figure(figsize=(8, 8))
@@ -39,6 +42,9 @@ error_df['distance_bin'] = pd.cut(error_df['distance'], bins=bins, labels=labels
 # Group errors by distance bin
 grouped_errors = [error_df[error_df['distance_bin'] == label]['error'].dropna().values*100 for label in labels]
 data_counts = [len(errors) for errors in grouped_errors]  # Count number of points in each bin
+
+for e in grouped_errors:
+    print(e.mean(), np.median(e), e.std())
 
 fig, ax1 = plt.subplots(figsize=(12, 6))
 
@@ -127,3 +133,89 @@ plt.legend(handles, color_map.keys(), title="Sensor Type", fontsize=12, title_fo
 
 # Show the plot
 plt.savefig(os.path.join(output_dir, 'sensor_geo_features.png'), dpi=300, bbox_inches='tight')
+
+# %%
+from scipy.spatial.distance import cdist
+
+# Extract only the relevant columns (CR, number of airports, type, and sensor_id)
+sensor_features = sensor_df[["sensor_id", "CR", "airport", "type"]].drop_duplicates()
+
+# Separate Radarcape and Dump1090 sensors
+radarcape_sensors = sensor_features[sensor_features["type"] == "Radarcape"]
+dump1090_sensors = sensor_features[sensor_features["type"] == "dump1090"]
+
+# Compute pairwise distances based on CR and airport values
+radarcape_coords = radarcape_sensors[["CR", "airport"]].values
+dump1090_coords = dump1090_sensors[["CR", "airport"]].values
+
+distance_matrix = cdist(radarcape_coords, dump1090_coords, metric='euclidean')
+
+# Find indices of the three closest pairs
+sorted_indices = np.unravel_index(np.argsort(distance_matrix, axis=None)[:2], distance_matrix.shape)
+
+# Create subplots
+fig, ax = plt.subplots(1, 1, figsize=(12, 6), sharey=True)
+color_list = ['tab:blue', 'tab:orange', 'tab:green']
+
+idx = 0
+
+radarcape_idx = sorted_indices[0][idx]
+dump1090_idx = sorted_indices[1][idx]
+
+closest_radarcape = radarcape_sensors.iloc[radarcape_idx]
+closest_dump1090 = dump1090_sensors.iloc[dump1090_idx]
+
+# Map sensor_id to type
+sensor_type_map = {
+    closest_radarcape["sensor_id"]: "Radarcape",
+    closest_dump1090["sensor_id"]: "Dump1090"
+}
+
+# Extract reception probability vs. distance for the closest pair
+closest_pair_ids = [closest_radarcape["sensor_id"], closest_dump1090["sensor_id"]]
+reception_data = sensor_df[sensor_df["sensor_id"].isin(closest_pair_ids)][["sensor_id", "distance_bin", "traffic_bin", "reception_probability"]]
+
+print(closest_pair_ids)
+
+# Count distinct values of A for each (B, C) pair
+mask = reception_data.groupby(['distance_bin', 'traffic_bin'])['sensor_id'].transform('nunique') > 1
+
+# Filter the dataframe
+df_filtered = reception_data[mask]
+
+color_index = 0
+
+for i in range(0, 110, 50):
+    for sensor_id in closest_pair_ids:
+
+        mask_traffic = df_filtered['traffic_bin'] == f'({i}, {i+10}]'
+        mask_sensor_id = df_filtered['sensor_id'] == sensor_id
+
+        marker_style = '*' if sensor_type_map[sensor_id] == "Dump1090" else 'o'
+
+        # Create labels dynamically
+        label = f'Traffic Midpoint: {i+5} - {sensor_type_map[sensor_id]}'
+
+        ax.plot(df_filtered[mask_traffic & mask_sensor_id]['distance_bin'],
+                df_filtered[mask_traffic & mask_sensor_id]['reception_probability'],
+                color=color_list[color_index],
+                marker=marker_style,
+                markersize=8,
+                label=label)
+
+    color_index += 1
+
+ax.set_xticklabels(df_filtered['distance_bin'].unique(), rotation=90, fontsize=12)
+# ax.set_title(f'Closest Pair {idx+1}')
+ax.set_xlabel('Distance Interval [NM]', fontsize = 12)
+ax.set_ylabel('Reception Probability [-]', fontsize = 12)
+
+# Add legend
+ax.legend(fontsize=10)
+
+# Show the plot
+plt.tight_layout()
+
+plt.savefig(os.path.join(output_dir, 'effect_of_distance.png'), dpi=300, bbox_inches='tight')
+
+plt.show()
